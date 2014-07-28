@@ -1,11 +1,11 @@
 (ns startclojure.app
-  ;; (:use (clojure.pprint))
   (:use (compojure handler
                    [core :only (GET POST defroutes)]))
-  (:require [ring.util.response :as response]
+  (:require [net.cgrand.enlive-html :as en]
+            [ring.util.response :as response]
             [ring.adapter.jetty :as jetty]))
 
-;; (use 'clojure.pprint)
+(use 'clojure.pprint)
 
 (defonce counter (atom 1000))
 
@@ -19,9 +19,9 @@
     id))
 
 
-(defn homepage
-  [request]
-  (str @urls))
+(en/deftemplate homepage
+  (en/xml-resource "homepage.html")
+  [request])
 
 
 (defn redirect
@@ -29,9 +29,19 @@
   (response/redirect (@urls id)))
 
 
-(defroutes app
+(defroutes app*
   (GET "/" request (homepage request))
+  (POST "/shorten" request
+        ;; {:status 200
+        ;;  :body (with-out-str (pprint request))
+        ;;  :headers {"Content-Type" "text/plain"}}
+       (let [id (shorten (-> request :params :url))]
+         (response/redirect "/"))
+       )
   (GET "/:id" [id] (redirect id)))
+
+
+(def app (compojure.handler/site app*))
 
 
 ;; (def server (jetty/run-jetty #'app {:port 8080 :join? false}))
