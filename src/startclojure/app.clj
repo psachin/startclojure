@@ -1,7 +1,8 @@
 (ns startclojure.app
   (:use (compojure handler
                    [core :only (GET POST defroutes)]))
-  (:require [net.cgrand.enlive-html :as en]
+  (:require compojure.route
+            [net.cgrand.enlive-html :as en]
             [ring.util.response :as response]
             [ring.adapter.jetty :as jetty]))
 
@@ -21,7 +22,11 @@
 
 (en/deftemplate homepage
   (en/xml-resource "homepage.html")
-  [request])
+  [request]
+  [:#listing :li] (en/clone-for [[id url] @urls]
+                                [:a] (comp
+                                      (en/content (format "%s : %s" id url))
+                                      (en/set-attr :href (str \/ id)))))
 
 
 (defn redirect
@@ -30,6 +35,7 @@
 
 
 (defroutes app*
+  (compojure.route/resources "/")
   (GET "/" request (homepage request))
   (POST "/shorten" request
         ;; {:status 200
